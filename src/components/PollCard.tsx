@@ -75,7 +75,7 @@ const PollCard = ({
                 variant={"destructive"}
                 className="rounded-none "
                 size="sm"
-                onClick={() => mutate(null)}
+                onClick={() => mutate({})}
                 disabled={isPending}
               >
                 {isPending ? (
