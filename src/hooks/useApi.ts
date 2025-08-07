@@ -31,6 +31,9 @@ export const useApiMutate = ({
       (await axiosInstance.request({ url, method, data: values })).data,
 
     mutationKey: [url, method],
+    onSuccess: () => {
+      toast.success("Success");
+    },
     ...options,
   });
 
