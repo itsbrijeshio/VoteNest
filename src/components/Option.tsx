@@ -2,49 +2,46 @@ import { Progress } from "./ui/progress";
 import React from "react";
 
 export interface OptionProps {
-  id: string;
+  _id: string;
   text: string;
   votes: number;
-  _count: {
-    votes: number;
-  };
 }
 
 const Option = ({
   option,
-  votes,
+  totalVotes,
   setActive = () => {},
   active = null,
 }: {
   pollId: string;
   option: OptionProps;
-  votes: number;
+  totalVotes: number;
   setActive: (state: string | null) => void;
   active: string | null;
 }) => {
-  const { id, text, _count } = option;
+  const { _id, text, votes } = option;
   const percentage =
-    votes === 0 || _count.votes === 0
+    totalVotes === 0 || votes === 0
       ? 0
-      : Math.round((_count.votes * 100) / votes);
+      : Math.round((votes * 100) / totalVotes);
 
   const handleChange = (events: React.ChangeEvent<HTMLInputElement>) => {
-    if (events.target.id == id) setActive(id);
+    if (events.target.id == _id) setActive(_id);
   };
 
   return (
-    <label htmlFor={id} className="cursor-pointer">
+    <label htmlFor={_id} className="cursor-pointer">
       <input
         type="radio"
-        id={id}
+        id={_id}
         name={"option"}
         className="hidden"
         onChange={handleChange}
       />
       <div
-        id={id}
+        id={_id}
         className={`w-full flex flex-col gap-2 shadow-md p-4 border ${
-          active == id && "border-primary"
+          active == _id && "border-primary"
         } bg-background`}
       >
         <div className="flex items-center justify-between">
@@ -54,7 +51,7 @@ const Option = ({
         <Progress value={percentage} className="bg-secondary" />
         <div className="text-start">
           <p className="opacity-75 text-sm">
-            <strong>{_count?.votes} Votes</strong>
+            <strong>{votes} Votes</strong>
           </p>
         </div>
       </div>

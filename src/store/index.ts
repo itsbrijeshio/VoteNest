@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type ModalType = "UpdatePoll" | null;
+export type ModalType = "UpdatePoll" | "";
 
 interface StoreType {
   modal: ModalType;
@@ -10,7 +10,7 @@ interface StoreType {
 }
 
 const useStore = create<StoreType>((set) => ({
-  modal: null,
+  modal: "",
   setModal: (modal) => set({ modal }),
   activePollId: null,
   setActivePollId: (id) => set({ activePollId: id }),

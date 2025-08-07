@@ -1,3 +1,3 @@
-import { useMutate, useQuery } from "./useApi";
+import { useApiMutate, useApiQuery } from "./useApi";
 
-export { useMutate, useQuery };
+export { useApiMutate, useApiQuery };

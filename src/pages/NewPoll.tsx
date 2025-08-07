@@ -3,42 +3,46 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useFormik } from "formik";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { HiPlus } from "react-icons/hi2";
 import { MdClose } from "react-icons/md";
-import { useMutation } from "@tanstack/react-query";
 import { BiLoaderAlt } from "react-icons/bi";
-import axiosInstance from "@/api/axiosInstance";
-import toast from "react-hot-toast";
-import { Checkbox } from "@/components/ui/checkbox";
+import { useApiMutate } from "@/hooks";
+
+interface Poll {
+  question?: string;
+  description?: string;
+  options?: string[];
+}
 
 const NewPoll = () => {
   const [option, setOption] = useState<number>(2);
-  const { isPending, mutate, isSuccess } = useMutation({
-    mutationFn: async (data) => (await axiosInstance.post("/polls", data)).data,
-    mutationKey: ["/polls/new", "POST"],
+  const { mutate, isPending } = useApiMutate({
+    url: "/polls",
+    method: "post",
   });
 
   const { handleSubmit, handleChange } = useFormik({
-    initialValues: {},
-    onSubmit: (data: any) => {
-      const poll: any = {
+    initialValues: {
+      question: "",
+      description: "",
+    },
+    onSubmit: (data: {
+      question: string;
+      description: string;
+      [key: string]: string;
+    }) => {
+      const poll: Poll = {
         options: [],
+        question: data.question,
+        description: data.description,
       };
       for (const x in data) {
-        if (x.includes("option")) poll.options.push(data[x]);
-        else poll[x] = data[x];
+        if (x.includes("option")) poll?.options?.push(data[x]);
       }
-      poll.isPublic = data?.isPublic[0] == "on" ? false : true;
       mutate(poll);
     },
   });
-
-  useEffect(() => {
-    if (isSuccess) {
-      toast.success("Poll created successfully");
-    }
-  }, [isSuccess]);
 
   const handleIncOption = () => {
     if (option > 5) return;
@@ -64,7 +68,7 @@ const NewPoll = () => {
             <Label htmlFor="question_field">Question</Label>
             <Input
               type="text"
-              name="title"
+              name="question"
               id="question_field"
               placeholder="Type your question here"
               required
@@ -79,16 +83,6 @@ const NewPoll = () => {
               className="resize-none"
               onChange={handleChange}
             ></Textarea>
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="checkbox"
-              name="isPublic"
-              id="public_field"
-              onChange={handleChange}
-              required={false}
-            />
-            <Label htmlFor="public_field">Private (default Public)</Label>
           </div>
           <div className="flex flex-col gap-2">
             <Label>Answer Options</Label>

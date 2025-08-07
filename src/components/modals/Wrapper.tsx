@@ -18,7 +18,7 @@ const Wrapper = ({ heading = "unknown", children }: WrapperProps) => {
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">{heading}</h2>
             <button
-              onClick={() => setModal(null)}
+              onClick={() => setModal("")}
               className="text-xl hover:text-error"
             >
               <IoMdClose />

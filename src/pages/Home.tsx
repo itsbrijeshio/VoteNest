@@ -1,22 +1,10 @@
-import { useEffect, useState } from "react";
-import { Pagination, PollCard } from "@/components";
-import { useMutate } from "@/hooks";
+import { PollCard } from "@/components";
+import { useApiQuery } from "@/hooks";
 import type { PollProps } from "@/components/PollCard";
 import { GrSearch } from "react-icons/gr";
 
 const Home = () => {
-  const [page, setPage] = useState<number>(1);
-  const { mutate, isPending, data } = useMutate(
-    `/polls/public?page=${page}`,
-    "get",
-    null,
-    false
-  );
-
-  useEffect(() => {
-    mutate();
-  }, [mutate, page]);
-
+  const { isPending, data } = useApiQuery({ url: "/polls" });
   return (
     <section className="max-w-[700px] flex flex-col gap-5 mx-auto">
       {/* Header */}
@@ -42,9 +30,6 @@ const Home = () => {
           <span>Not found polls</span>
         </div>
       )}
-
-      {/* Pagination */}
-      <Pagination page={page} setPage={setPage} length={data?.data?.length} />
     </section>
   );
 };

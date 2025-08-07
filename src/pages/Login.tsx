@@ -5,6 +5,7 @@ import { useAuth } from "@/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { BiLoaderAlt } from "react-icons/bi";
 
 const Login = () => {
   const { loading, login } = useAuth();
@@ -15,7 +16,7 @@ const Login = () => {
       password: "",
     },
     onSubmit: (data) => {
-      login(data)();
+      login(data);
     },
   });
 
@@ -61,7 +62,11 @@ const Login = () => {
           />
         </div>
         <Button type="submit" disabled={loading}>
-          Sign in
+          {loading ? (
+            <BiLoaderAlt className="animate animate-spin" />
+          ) : (
+            "Sign in"
+          )}
         </Button>
       </form>
       <div className="text-center">

@@ -1,69 +1,61 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
 import { MdOutlineKeyboardDoubleArrowRight } from "react-icons/md";
 import { timeFormatter } from "@/utils";
-import { useMutate } from "@/hooks";
 import { BsTrash3 } from "react-icons/bs";
 import { CiEdit } from "react-icons/ci";
-import { BiLoaderAlt } from "react-icons/bi";
-import { useEffect } from "react";
 import useStore from "@/store";
+import { useApiMutate } from "@/hooks";
+import { BiLoaderAlt } from "react-icons/bi";
 
 export interface PollProps {
-  id: string;
-  title: string;
+  _id: string;
+  question: string;
   description: string;
-  createdAt: string;
-  isPublic: boolean;
-  _count: {
-    votes: number;
+  user: {
+    _id: string;
+    name: string;
   };
+  createdAt: string;
+  votes: number;
 }
 
 const PollCard = ({
   poll,
   auth = false,
-  mutate = () => {},
 }: {
   poll: PollProps;
   auth?: boolean;
   mutate?: () => void;
 }) => {
-  const { id, title, description, createdAt, isPublic, _count } = poll;
-  const deleteMutate = useMutate(`/polls/${id}`, "delete");
+  const { _id, question, description, createdAt, votes, user } = poll;
+  const navigate = useNavigate();
   const { setModal, setActivePollId } = useStore();
-
-  const handleDelete = () => deleteMutate.mutate();
+  const { mutate, isPending } = useApiMutate({
+    url: `/polls/${_id}`,
+    method: "delete",
+    onSuccess: navigate,
+  });
 
   const handleUpdate = () => {
-    setActivePollId(id);
+    setActivePollId(_id);
     setModal("UpdatePoll");
   };
 
-  useEffect(() => {
-    if (deleteMutate.isSuccess) mutate();
-  }, [deleteMutate.isSuccess, mutate]);
-
   return (
     <div className="relative w-full p-5 shadow-md rounded bg-white dark:bg-background/50">
-      <h3 className="text-xl">{title}</h3>
+      <h3 className="text-xl">{question}</h3>
       <p className="opacity-75 text-sm">{description}</p>
       <div className="mt-3 flex flex-wrap gap-3 items-baseline justify-between">
         <div className="flex flex-wrap gap-3">
           <span className="opacity-50 text-sm text-nowrap">
-            Publish on{" "}
-            <Badge variant={"secondary"}>{timeFormatter(createdAt)}</Badge>
-          </span>
-          <span className="opacity-50 text-sm text-nowrap">
-            Visibility{" "}
-            <Badge variant={"secondary"}>
-              {isPublic ? "Public" : "Private"}
-            </Badge>
+            Publish by <Badge variant={"secondary"}>{user.name}</Badge>, created
+            at <Badge variant={"secondary"}>{timeFormatter(createdAt)}</Badge>
           </span>
         </div>
         <div className="flex gap-2 ">
-          <Link to={`/polls/${id}?private=${auth}`}>
+          <Link to={`/polls/${_id}`}>
             <Button className="rounded-none " size={"sm"}>
               <MdOutlineKeyboardDoubleArrowRight className="text-5xl" />
               View
@@ -83,10 +75,14 @@ const PollCard = ({
                 variant={"destructive"}
                 className="rounded-none "
                 size="sm"
-                disabled={deleteMutate.isPending}
-                onClick={handleDelete}
+                onClick={() => mutate(null)}
+                disabled={isPending}
               >
-                {deleteMutate.isPending ? <BiLoaderAlt /> : <BsTrash3 />}
+                {isPending ? (
+                  <BiLoaderAlt className="animate animate-spin" />
+                ) : (
+                  <BsTrash3 />
+                )}
               </Button>
             </>
           )}
@@ -97,7 +93,7 @@ const PollCard = ({
           variant={"outline"}
           className="text-sm text-primary bg-background"
         >
-          {_count.votes} Votes
+          {votes} Votes
         </Badge>
       </div>
     </div>

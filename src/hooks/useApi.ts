@@ -1,39 +1,73 @@
+import { toast } from "react-hot-toast";
 import axiosInstance from "@/api/axiosInstance";
-import * as query from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import axios from "axios";
 
-type Methods = "get" | "post" | "patch" | "put" | "delete";
+type HttpMethod = "get" | "post" | "put" | "delete" | "patch";
 
-const useMutate = (
-  url: string = "",
-  method: Methods = "get",
-  data: any = {},
-  notify: boolean = true
-) => {
-  const mutate = query.useMutation({
-    mutationFn: async (values: any = data) =>
-      (await axiosInstance[method](url, values)).data,
+interface ApiMutate {
+  url: string;
+  method?: HttpMethod;
+  data?: unknown;
+  notify?: boolean;
+  [key: string]: unknown;
+}
+
+interface ApiQuery {
+  url: string;
+  method?: "get" | "delete";
+  notify?: boolean;
+}
+
+export const useApiMutate = ({
+  url,
+  method = "post",
+  data = null,
+  notify = false,
+  ...options
+}: ApiMutate) => {
+  const mutate = useMutation({
+    mutationFn: async (values: unknown = data) =>
+      (await axiosInstance.request({ url, method, data: values })).data,
+
     mutationKey: [url, method],
+    ...options,
   });
 
-  if (mutate.isError && notify) {
-    const msg = mutate.error?.message || "Something went wrong.";
-    toast.error(msg);
+  if (mutate.isError && notify && axios.isAxiosError(mutate.error)) {
+    const message =
+      mutate.error.response?.data.error?.message || mutate.error?.message;
+    toast.error(message);
   }
 
-  if (mutate.isSuccess && notify) {
-    const msg = mutate.data?.data?.message || "Success";
-    toast.success(msg);
-  }
   return mutate;
 };
 
-const useQuery = (url: string, method: "get" | "delete" = "get") => {
-  const response = query.useQuery({
-    queryFn: async () => (await axiosInstance[method](url)).data,
-    queryKey: [url, method],
-  });
-  return response;
+const apiQuery = async ({
+  url = "",
+  method = "get",
+  notify = false,
+}: ApiQuery) => {
+  try {
+    const response = (await axiosInstance[method](url)).data;
+    return response;
+  } catch (error) {
+    console.error("Error:", error);
+    if (notify) {
+      toast.error("Something went wrong!");
+    }
+    return error;
+  }
 };
 
-export { useMutate, useQuery };
+export const useApiQuery = ({
+  url = "",
+  method = "get",
+  notify = false,
+}: ApiQuery) => {
+  const query = useQuery({
+    queryFn: async () => apiQuery({ url, method, notify }),
+    queryKey: [url, method],
+  });
+  return query;
+};

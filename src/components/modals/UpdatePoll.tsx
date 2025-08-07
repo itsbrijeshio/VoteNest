@@ -1,4 +1,3 @@
-import { useFormik } from "formik";
 import { useEffect, useState } from "react";
 import { Label } from "../ui/label";
 import { Input } from "../ui/input";
@@ -7,56 +6,45 @@ import { Button } from "../ui/button";
 import { HiPlus } from "react-icons/hi2";
 import { BiLoaderAlt } from "react-icons/bi";
 import { MdClose } from "react-icons/md";
-import { useMutate, useQuery } from "@/hooks";
+import { useApiMutate, useApiQuery } from "@/hooks";
 import useStore from "@/store";
+
+interface Poll {
+  question?: string;
+  description?: string;
+  options?: string[];
+}
 
 const UpdatePoll = () => {
   const { activePollId } = useStore();
+  const { data } = useApiQuery({ url: `/polls/${activePollId}` });
   const [optionCount, setOptionCount] = useState<number>(2);
-  const { data, isSuccess } = useQuery(`/polls/${activePollId}`);
-  const { isPending, mutate } = useMutate(`/polls/${activePollId}`, "patch");
-
-  const formik = useFormik({
-    initialValues: {
-      title: "",
-      description: "",
-    },
-    onSubmit: (values: any) => {
-      const poll: any = {
-        title: values.title,
-        description: values.description,
-        options: [],
-      };
-
-      Object.keys(values).forEach((key) => {
-        if (key.startsWith("option")) {
-          poll.options.push(values[key]);
-        }
-      });
-
-      console.log("Final Poll Data →", poll);
-      mutate(poll);
-    },
+  const { mutate, isPending } = useApiMutate({
+    url: `/polls/${activePollId}`,
+    method: "patch",
   });
 
-  const { handleSubmit, handleChange, values, setValues } = formik;
-
-  useEffect(() => {
-    if (isSuccess && data?.data) {
-      const pollData = data.data;
-      const formValues: any = {
-        title: pollData.title || "",
-        description: pollData.description || "",
-      };
-
-      pollData.options?.forEach((opt: any, i: number) => {
-        formValues[`option${i + 1}`] = opt.text;
-      });
-
-      setValues(formValues);
-      setOptionCount(pollData.options?.length || 2);
+  const handleUpdateForm = (e: React.FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
+    const form = new FormData(e.target as HTMLFormElement);
+    const poll: Poll = {
+      options: [],
+      question: "",
+      description: "",
+    };
+    for (const [key, value] of form.entries()) {
+      if (key.includes("option") && poll.options) {
+        poll.options.push(value as string);
+      }
+      if (key == "question") {
+        poll.question = value as string;
+      }
+      if (key == "description") {
+        poll.description = value as string;
+      }
     }
-  }, [isSuccess, data, setValues]);
+    mutate(poll);
+  };
 
   const handleIncOption = () => {
     if (optionCount >= 6) return;
@@ -68,19 +56,23 @@ const UpdatePoll = () => {
     setOptionCount((prev) => prev - 1);
   };
 
+  useEffect(() => {
+    const count = data?.data?.options?.length || 2;
+    setOptionCount(count);
+  }, [data]);
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5">
+    <form onSubmit={handleUpdateForm} className="flex flex-col gap-5">
       {/* Title */}
       <div className="flex flex-col gap-2">
         <Label htmlFor="question_field">Question</Label>
         <Input
           type="text"
-          name="title"
+          name="question"
           id="question_field"
           placeholder="Type your question here"
           required
-          value={values.title}
-          onChange={handleChange}
+          defaultValue={data?.data?.question}
         />
       </div>
 
@@ -91,8 +83,7 @@ const UpdatePoll = () => {
           name="description"
           id="description_field"
           className="resize-none"
-          value={values.description}
-          onChange={handleChange}
+          defaultValue={data?.data?.description}
         />
       </div>
 
@@ -106,11 +97,10 @@ const UpdatePoll = () => {
               <div key={key} className="relative">
                 <Input
                   type="text"
-                  name={key}
+                  name={`option${key}`}
                   placeholder={`Option ${index + 1}`}
+                  defaultValue={data?.data?.options[index]?.text}
                   required
-                  value={values[key] || ""}
-                  onChange={handleChange}
                 />
                 {optionCount > 2 && (
                   <Button
@@ -136,7 +126,7 @@ const UpdatePoll = () => {
 
       {/* Submit */}
       <div className="border-t pt-5">
-        <Button type="submit" className="w-32" disabled={isPending}>
+        <Button type="submit" className="w-32">
           {isPending ? <BiLoaderAlt className="animate-spin" /> : "Update Poll"}
         </Button>
       </div>
